@@ -1,0 +1,16 @@
+{
+  "name": "NestJS-Simple-TODO-List",
+  "packageManager": "yarn@4.7.0",
+  "devDependencies": {
+    "typescript": "^5.8.2"
+  },
+  "scripts": {
+    "dev": "turbo run dev"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "dependencies": {
+    "turbo": "^2.4.4"
+  }
+}
