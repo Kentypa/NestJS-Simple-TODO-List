@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { AddTodoDto } from 'src/todos/dto/add-todo.dto';
-import { UpdateTodoDto } from 'src/todos/dto/update-todo.dto';
-import { Todo } from 'src/todos/interfaces/todo.interface';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { AddTodoDto } from "src/todos/dto/add-todo.dto";
+import { UpdateTodoDto } from "src/todos/dto/update-todo.dto";
+import { Todo } from "src/todos/interfaces/todo.interface";
 
 @Injectable()
 export class TodosService {
@@ -19,18 +19,26 @@ export class TodosService {
   }
 
   remove(id: number) {
+    const todoToRemove = this.todos.find((todo) => todo.id === id);
+
+    if (!todoToRemove) {
+      throw new NotFoundException(`Todos with ${id} not found`);
+    }
+
     this.todos = this.todos.filter((todo) => todo.id !== id);
   }
 
   update(id: number, todoInfo: UpdateTodoDto) {
     const index = this.todos.findIndex((todo) => todo.id === id);
 
-    if (index !== -1) {
-      this.todos[index] = {
-        ...this.todos[index],
-        description: todoInfo.description,
-        isCompleted: todoInfo.isCompleted,
-      };
+    if (index === -1) {
+      throw new NotFoundException(`Todos with ${id} not found`);
     }
+
+    this.todos[index] = {
+      ...this.todos[index],
+      description: todoInfo.description,
+      isCompleted: todoInfo.isCompleted,
+    };
   }
 }

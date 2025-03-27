@@ -11,7 +11,7 @@ export const TodosContent: FC = () => {
     "http://localhost:3000/todos"
   );
 
-  const getTodosQuery = useQuery({ queryKey: ["todos"], queryFn: getTodos });
+  const { data } = useQuery({ queryKey: ["todos"], queryFn: getTodos });
 
   const addTodoMutation = useMutation({
     mutationFn: addTodo,
@@ -51,11 +51,13 @@ export const TodosContent: FC = () => {
           onChange={handleChange}
         />
       </form>
-      <TodoList
-        todos={getTodosQuery.data ?? []}
-        handleRemove={removeTodoMutation.mutate}
-        handleUpdate={updateTodoMutation.mutate}
-      />
+      {data && (
+        <TodoList
+          todos={data}
+          handleRemove={removeTodoMutation.mutate}
+          handleUpdate={updateTodoMutation.mutate}
+        />
+      )}
     </div>
   );
 };

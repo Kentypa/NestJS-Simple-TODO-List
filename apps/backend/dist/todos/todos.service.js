@@ -21,17 +21,22 @@ let TodosService = class TodosService {
         return this.todos;
     }
     remove(id) {
+        const todoToRemove = this.todos.find((todo) => todo.id === id);
+        if (!todoToRemove) {
+            throw new common_1.NotFoundException(`Todos with ${id} not found`);
+        }
         this.todos = this.todos.filter((todo) => todo.id !== id);
     }
     update(id, todoInfo) {
         const index = this.todos.findIndex((todo) => todo.id === id);
-        if (index !== -1) {
-            this.todos[index] = {
-                ...this.todos[index],
-                description: todoInfo.description,
-                isCompleted: todoInfo.isCompleted,
-            };
+        if (index === -1) {
+            throw new common_1.NotFoundException(`Todos with ${id} not found`);
         }
+        this.todos[index] = {
+            ...this.todos[index],
+            description: todoInfo.description,
+            isCompleted: todoInfo.isCompleted,
+        };
     }
 };
 exports.TodosService = TodosService;

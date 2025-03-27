@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const todos_service_1 = require("./todos.service");
 const add_todo_dto_1 = require("./dto/add-todo.dto");
 const update_todo_dto_1 = require("./dto/update-todo.dto");
+const http_exception_filter_1 = require("../shared/filters/http-exception.filter");
 let TodosController = class TodosController {
     constructor(todoService) {
         this.todoService = todoService;
@@ -43,28 +44,29 @@ __decorate([
 ], TodosController.prototype, "getTodos", null);
 __decorate([
     (0, common_1.Post)(),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, common_1.Body)(new common_1.ValidationPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [add_todo_dto_1.AddTodoDto]),
     __metadata("design:returntype", Promise)
 ], TodosController.prototype, "addTodo", null);
 __decorate([
     (0, common_1.Delete)(),
-    __param(0, (0, common_1.Query)('id', common_1.ParseIntPipe)),
+    __param(0, (0, common_1.Query)("id", common_1.ParseIntPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], TodosController.prototype, "removeTodo", null);
 __decorate([
     (0, common_1.Put)(),
-    __param(0, (0, common_1.Query)('id', common_1.ParseIntPipe)),
-    __param(1, (0, common_1.Body)()),
+    __param(0, (0, common_1.Query)("id", common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)(new common_1.ValidationPipe())),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number, update_todo_dto_1.UpdateTodoDto]),
     __metadata("design:returntype", Promise)
 ], TodosController.prototype, "updateTodo", null);
 exports.TodosController = TodosController = __decorate([
-    (0, common_1.Controller)('todos'),
+    (0, common_1.Controller)("todos"),
+    (0, common_1.UseFilters)(http_exception_filter_1.HttpExceptionFilter),
     __metadata("design:paramtypes", [todos_service_1.TodosService])
 ], TodosController);
 //# sourceMappingURL=todos.controller.js.map

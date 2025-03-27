@@ -18,9 +18,9 @@ export const TodoItem: FC<TodoItemProps> = ({
   const {
     isChecked,
     isEditing,
+    tempDescription,
     toggleChecking,
     toggleEditing,
-    tempDescription,
     handleChange,
     handleChangeByValue,
   } = useTodoItem(isCompleted, description);
@@ -40,7 +40,6 @@ export const TodoItem: FC<TodoItemProps> = ({
     if (e.key === "Escape") {
       toggleEditing();
       handleChangeByValue(description);
-      console.log("Camera man");
     }
   }
 

@@ -5,18 +5,21 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var __metadata = (this && this.__metadata) || function (k, v) {
-    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AddTodoDto = void 0;
-const class_validator_1 = require("class-validator");
-class AddTodoDto {
-}
-exports.AddTodoDto = AddTodoDto;
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], AddTodoDto.prototype, "description", void 0);
-//# sourceMappingURL=add-todo.dto.js.map
+exports.LoggingInterceptor = void 0;
+const common_1 = require("@nestjs/common");
+const operators_1 = require("rxjs/operators");
+let LoggingInterceptor = class LoggingInterceptor {
+    intercept(context, next) {
+        console.log("Before...");
+        const now = Date.now();
+        return next
+            .handle()
+            .pipe((0, operators_1.tap)(() => console.log(`After... ${Date.now() - now}ms`)));
+    }
+};
+exports.LoggingInterceptor = LoggingInterceptor;
+exports.LoggingInterceptor = LoggingInterceptor = __decorate([
+    (0, common_1.Injectable)()
+], LoggingInterceptor);
+//# sourceMappingURL=%20logging.interceptor.js.map

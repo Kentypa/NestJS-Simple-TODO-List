@@ -3,18 +3,21 @@ import {
   Controller,
   Delete,
   Get,
-  Param,
   ParseIntPipe,
   Post,
   Put,
   Query,
-} from '@nestjs/common';
-import { Todo } from 'src/todos/interfaces/todo.interface';
-import { TodosService } from './todos.service';
-import { AddTodoDto } from 'src/todos/dto/add-todo.dto';
-import { UpdateTodoDto } from 'src/todos/dto/update-todo.dto';
+  UseFilters,
+  ValidationPipe,
+} from "@nestjs/common";
+import { Todo } from "src/todos/interfaces/todo.interface";
+import { TodosService } from "./todos.service";
+import { AddTodoDto } from "src/todos/dto/add-todo.dto";
+import { UpdateTodoDto } from "src/todos/dto/update-todo.dto";
+import { HttpExceptionFilter } from "src/shared/filters/http-exception.filter";
 
-@Controller('todos')
+@Controller("todos")
+@UseFilters(HttpExceptionFilter)
 export class TodosController {
   constructor(private todoService: TodosService) {}
 
@@ -24,17 +27,20 @@ export class TodosController {
   }
 
   @Post()
-  async addTodo(@Body() addTodo: AddTodoDto) {
+  async addTodo(@Body(new ValidationPipe()) addTodo: AddTodoDto) {
     this.todoService.add(addTodo);
   }
 
   @Delete()
-  async removeTodo(@Query('id', ParseIntPipe) id: number) {
+  async removeTodo(@Query("id", ParseIntPipe) id: number) {
     this.todoService.remove(id);
   }
 
   @Put()
-  async updateTodo(@Query('id', ParseIntPipe) id: number, @Body() updatedInfo: UpdateTodoDto) {
+  async updateTodo(
+    @Query("id", ParseIntPipe) id: number,
+    @Body(new ValidationPipe()) updatedInfo: UpdateTodoDto
+  ) {
     this.todoService.update(id, updatedInfo);
   }
 }
