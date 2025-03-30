@@ -9,8 +9,5 @@
   },
   "workspaces": [
     "apps/*"
-  ],
-  "dependencies": {
-    "turbo": "^2.4.4"
-  }
+  ]
 }

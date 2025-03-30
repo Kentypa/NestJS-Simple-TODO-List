@@ -13,7 +13,7 @@ export function useTodoItem(isCompleted: boolean, description: string) {
     setIsEditing((prev) => !prev);
   }
 
-  function handleChange(e: ChangeEvent<HTMLInputElement>) {
+  function handleChange(e: ChangeEvent<HTMLTextAreaElement>) {
     setTempDescription(e.target.value);
   }
 

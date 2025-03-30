@@ -1,7 +1,17 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsBoolean, IsNotEmpty, IsString } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsNumber, IsString } from "class-validator";
 
-export class UpdateTodoDto {
+export class GetTodoDto {
+  @IsNumber()
+  @IsNotEmpty()
+  @ApiProperty({
+    example: 1,
+    description: "ID of todo",
+    type: "number",
+    minimum: 1,
+  })
+  id: number;
+
   @IsString()
   @IsNotEmpty()
   @ApiProperty({

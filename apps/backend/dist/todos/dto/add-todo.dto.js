@@ -10,6 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AddTodoDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 class AddTodoDto {
 }
@@ -17,6 +18,11 @@ exports.AddTodoDto = AddTodoDto;
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
+    (0, swagger_1.ApiProperty)({
+        example: "Make a button with properties...",
+        description: "Description of todo",
+        type: "string",
+    }),
     __metadata("design:type", String)
-], AddTodoDto.prototype, "description", void 0);
+], AddTodoDto.prototype, "task", void 0);
 //# sourceMappingURL=add-todo.dto.js.map

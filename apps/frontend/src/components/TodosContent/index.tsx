@@ -3,39 +3,27 @@ import { TodoList } from "../TodoList";
 import { useForm } from "../../hooks/use-form";
 import { todoService } from "../../services/todoService";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Queries } from "../../enums/queries";
 
 export const TodosContent: FC = () => {
   const queryClient = useQueryClient();
 
-  const { addTodo, getTodos, removeTodo, updateTodo } = todoService(
-    "http://localhost:3000/todos"
-  );
+  const { addTodo, getTodos } = todoService("/todos");
 
-  const { data } = useQuery({ queryKey: ["todos"], queryFn: getTodos });
+  const { data, isSuccess, isLoading, isError, error } = useQuery({
+    queryKey: [Queries.TODOS],
+    queryFn: getTodos,
+  });
 
   const addTodoMutation = useMutation({
     mutationFn: addTodo,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["todos"] });
-    },
-  });
-
-  const removeTodoMutation = useMutation({
-    mutationFn: removeTodo,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["todos"] });
-    },
-  });
-
-  const updateTodoMutation = useMutation({
-    mutationFn: updateTodo,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["todos"] });
+      queryClient.invalidateQueries({ queryKey: [Queries.TODOS] });
     },
   });
 
   const { formState, handleChange, handleSubmit } = useForm(
-    { description: "" },
+    { task: "" },
     addTodoMutation.mutate
   );
 
@@ -46,17 +34,22 @@ export const TodosContent: FC = () => {
         <input
           type="text"
           className="w-full p-2 border border-gray-700"
-          name="description"
+          name="task"
           value={formState.description}
           onChange={handleChange}
         />
       </form>
-      {data && (
-        <TodoList
-          todos={data}
-          handleRemove={removeTodoMutation.mutate}
-          handleUpdate={updateTodoMutation.mutate}
-        />
+      {isLoading && (
+        <div className="flex justify-center items-center">
+          <h3>Todos is loading</h3>
+        </div>
+      )}
+      {isSuccess && <TodoList todos={data} />}
+      {isError && (
+        <div className="flex justify-center items-center">
+          <h3>Todos can`t be loaded: </h3>
+          <p>{error.message}</p>
+        </div>
       )}
     </div>
   );

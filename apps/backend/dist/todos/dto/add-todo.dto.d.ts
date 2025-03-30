@@ -1,3 +1,3 @@
 export declare class AddTodoDto {
-    description: string;
+    task: string;
 }

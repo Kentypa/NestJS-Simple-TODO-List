@@ -1,4 +1,4 @@
 export declare class UpdateTodoDto {
-    description: string;
+    task: string;
     isCompleted: boolean;
 }

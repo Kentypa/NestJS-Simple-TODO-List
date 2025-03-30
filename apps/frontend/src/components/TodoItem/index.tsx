@@ -1,19 +1,36 @@
-import { FC, KeyboardEvent } from "react";
+import { ChangeEvent, FC, KeyboardEvent } from "react";
 import { TodoItemType } from "../../types/todo-item";
 import { useTodoItem } from "../../hooks/use-todo-item";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Queries } from "../../enums/queries";
+import { todoService } from "../../services/todoService";
+import { TodoActionButtons } from "../TodoActionButtons";
+import TextareaAutosize from "react-textarea-autosize";
 
 type TodoItemProps = {
   todo: TodoItemType;
-  handleRemove: (id: number) => void;
-  handleUpdate: (todo: TodoItemType) => void;
 };
 
-export const TodoItem: FC<TodoItemProps> = ({
-  todo,
-  handleRemove,
-  handleUpdate,
-}) => {
-  const { description, id, isCompleted } = todo;
+export const TodoItem: FC<TodoItemProps> = ({ todo }) => {
+  const queryClient = useQueryClient();
+
+  const { removeTodo, updateTodo } = todoService("/todos");
+
+  const { task, id, isCompleted } = todo;
+
+  const removeTodoMutation = useMutation({
+    mutationFn: removeTodo,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [Queries.TODOS] });
+    },
+  });
+
+  const updateTodoMutation = useMutation({
+    mutationFn: updateTodo,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [Queries.TODOS] });
+    },
+  });
 
   const {
     isChecked,
@@ -23,79 +40,66 @@ export const TodoItem: FC<TodoItemProps> = ({
     toggleEditing,
     handleChange,
     handleChangeByValue,
-  } = useTodoItem(isCompleted, description);
+  } = useTodoItem(isCompleted, task);
 
-  function handleEditingEnter(e: KeyboardEvent<HTMLInputElement>) {
+  function handleEditingEnter(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter") {
       toggleEditing();
-      handleUpdate({
-        id: id,
-        description: tempDescription,
+      updateTodoMutation.mutate({
+        id,
+        task: tempDescription,
         isCompleted: isChecked,
       });
     }
   }
 
-  function handleEditingClose(e: KeyboardEvent<HTMLInputElement>) {
+  function handleEditingClose(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Escape") {
       toggleEditing();
-      handleChangeByValue(description);
+      handleChangeByValue(task);
     }
   }
 
-  function handleKeyAction(e: KeyboardEvent<HTMLInputElement>) {
-    const actionList = [handleEditingEnter, handleEditingClose];
+  function handleKeyAction(e: KeyboardEvent<HTMLTextAreaElement>) {
+    handleEditingEnter(e);
+    handleEditingClose(e);
+  }
 
-    actionList.map((action) => action(e));
+  function handleChecking(e: ChangeEvent<HTMLInputElement>) {
+    toggleChecking();
+    updateTodoMutation.mutate({
+      id,
+      task,
+      isCompleted: e.target.checked,
+    });
   }
 
   return (
-    <div className="relative flex justify-between w-full p-4 bg-gray-500 max-h-[56px]">
+    <div className="relative flex justify-between w-full p-4 bg-gray-500">
       <div className="flex gap-2 items-center">
-        <input
-          type="checkbox"
-          checked={isChecked}
-          onChange={(e) => {
-            toggleChecking();
-            handleUpdate({
-              id: id,
-              description: description,
-              isCompleted: e.target.checked,
-            });
-          }}
-        />
+        <input type="checkbox" checked={isChecked} onChange={handleChecking} />
         {isEditing ? (
-          <div>
-            <input
-              className="bg-gray-100 border rounded-xl p-1 w-full"
-              value={tempDescription}
-              onChange={handleChange}
-              onKeyDown={handleKeyAction}
-            />
-          </div>
+          <TextareaAutosize
+            className="bg-gray-100 border rounded-xl p-1"
+            value={tempDescription}
+            onChange={handleChange}
+            onKeyDown={handleKeyAction}
+          />
         ) : (
-          <p className={`${isChecked && "text-green-500 line-through"}`}>
-            {description}
+          <p
+            className={`${
+              isChecked && "text-green-500 line-through"
+            } break-words w-auto flex-grow max-w-[200px]`}
+          >
+            {task}
           </p>
         )}
       </div>
       {!isEditing && (
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={() => {
-              toggleEditing();
-            }}
-          >
-            📝
-          </button>
-          <button
-            onClick={() => {
-              handleRemove(id);
-            }}
-          >
-            ❌
-          </button>
-        </div>
+        <TodoActionButtons
+          handleRemove={() => removeTodoMutation.mutate(id)}
+          toggleEditing={toggleEditing}
+        />
       )}
     </div>
   );

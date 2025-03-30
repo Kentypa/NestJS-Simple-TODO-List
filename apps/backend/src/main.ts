@@ -1,15 +1,28 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { NestExpressApplication } from '@nestjs/platform-express';
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "./app.module";
+import { NestExpressApplication } from "@nestjs/platform-express";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { ConfigService } from "@nestjs/config";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  app.set('query parser', 'extended');
+  const configService = app.get(ConfigService);
+
   app.enableCors({
-    origin: 'http://localhost:5173',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    origin: `http://localhost:${configService.get("frontend.port") as number}`,
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true,
   });
-  await app.listen(process.env.PORT ?? 3000);
+
+  const config = new DocumentBuilder()
+    .setTitle("TODOS API")
+    .setDescription("Todos api description")
+    .setVersion("1.0")
+    .build();
+
+  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup("api", app, documentFactory);
+
+  await app.listen(configService.get("backend.port") as number);
 }
 bootstrap();

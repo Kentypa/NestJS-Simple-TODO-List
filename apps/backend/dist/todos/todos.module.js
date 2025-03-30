@@ -10,11 +10,14 @@ exports.TodosModule = void 0;
 const common_1 = require("@nestjs/common");
 const todos_controller_1 = require("./todos.controller");
 const todos_service_1 = require("./todos.service");
+const typeorm_1 = require("@nestjs/typeorm");
+const todo_entity_1 = require("./entities/todo.entity");
 let TodosModule = class TodosModule {
 };
 exports.TodosModule = TodosModule;
 exports.TodosModule = TodosModule = __decorate([
     (0, common_1.Module)({
+        imports: [typeorm_1.TypeOrmModule.forFeature([todo_entity_1.Todo])],
         controllers: [todos_controller_1.TodosController],
         providers: [todos_service_1.TodosService],
     })
