@@ -76,7 +76,7 @@ export const UserProfilePage: FC = () => {
       handleChangeByValue("email", user.email);
       handleChangeByValue("password", user.password);
     }
-  }, [handleChangeByValue, isSuccess, user]);
+  }, [isSuccess]);
 
   return (
     <PageWrapper>
