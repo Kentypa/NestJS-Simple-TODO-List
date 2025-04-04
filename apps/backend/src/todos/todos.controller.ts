@@ -8,13 +8,14 @@ import {
   Post,
   Put,
   Query,
+  Session,
+  UnauthorizedException,
   UseFilters,
   ValidationPipe,
 } from "@nestjs/common";
 import { TodosService } from "./todos.service";
 import { AddTodoDto } from "src/todos/dto/add-todo.dto";
 import { UpdateTodoDto } from "src/todos/dto/update-todo.dto";
-import { GetTodoDto } from "./dto/get-todo.dto";
 import { HttpExceptionFilter } from "src/shared/filters/http-exception.filter";
 import {
   ApiBearerAuth,
@@ -33,70 +34,61 @@ export class TodosController {
   constructor(private todoService: TodosService) {}
 
   @Get()
-  @ApiOperation({ summary: "Get array of todos" })
-  @ApiResponse({
-    status: 200,
-    description: "Array of todos",
-    type: [GetTodoDto],
-  })
+  @ApiOperation({ summary: "Get user's todos" })
+  @ApiResponse({ status: 200, description: "Array of todos" })
   @HttpCode(200)
-  async getTodos(): Promise<GetTodoDto[]> {
-    return this.todoService.get();
+  async getTodos(@Session() session: Record<string, any>) {
+    if (!session.userId) {
+      throw new UnauthorizedException("Not authenticated");
+    }
+    return this.todoService.getByUser(session.userId);
   }
 
   @Post()
-  @ApiOperation({ summary: "Add todo to database" })
-  @ApiResponse({
-    status: 201,
-    description: "Todo created successfully",
-  })
-  @ApiBody({
-    type: AddTodoDto,
-    description: "Todo task information",
-  })
+  @ApiOperation({ summary: "Add a new todo" })
+  @ApiResponse({ status: 201, description: "Todo created successfully" })
+  @ApiBody({ type: AddTodoDto })
   @HttpCode(201)
-  async addTodo(@Body(new ValidationPipe()) addTodo: AddTodoDto) {
-    return this.todoService.add(addTodo);
+  async addTodo(
+    @Body(new ValidationPipe()) addTodo: AddTodoDto,
+    @Session() session: Record<string, any>
+  ) {
+    if (!session.userId) {
+      throw new UnauthorizedException("Not authenticated");
+    }
+    return this.todoService.add(addTodo, session.userId);
   }
 
   @Delete()
-  @ApiOperation({ summary: "Remove todo from database" })
-  @ApiResponse({
-    status: 200,
-    description: "Todo removed successfully",
-  })
-  @ApiQuery({
-    name: "id",
-    description: "ID of todo",
-    type: "number",
-    example: 1,
-  })
+  @ApiOperation({ summary: "Remove a todo" })
+  @ApiResponse({ status: 200, description: "Todo removed successfully" })
+  @ApiQuery({ name: "id", type: "number", example: 1 })
   @HttpCode(200)
-  async removeTodo(@Query("id", ParseIntPipe) id: number) {
-    return this.todoService.remove(id);
+  async removeTodo(
+    @Query("id", ParseIntPipe) id: number,
+    @Session() session: Record<string, any>
+  ) {
+    if (!session.userId) {
+      throw new UnauthorizedException("Not authenticated");
+    }
+    return this.todoService.remove(id, session.userId);
   }
 
   @Put()
-  @ApiOperation({ summary: "Update todo from database" })
-  @ApiResponse({
-    status: 200,
-    description: "Todo updated successfully",
-  })
-  @ApiQuery({
-    name: "id",
-    description: "ID of todo",
-    type: "number",
-    example: 1,
-  })
-  @ApiBody({
-    type: UpdateTodoDto,
-    description: "Updated todo information",
-  })
+  @ApiOperation({ summary: "Update a todo" })
+  @ApiResponse({ status: 200, description: "Todo updated successfully" })
+  @ApiQuery({ name: "id", type: "number", example: 1 })
+  @ApiBody({ type: UpdateTodoDto })
   @HttpCode(200)
   async updateTodo(
     @Query("id", ParseIntPipe) id: number,
-    @Body(new ValidationPipe()) updatedInfo: UpdateTodoDto
+    @Body(new ValidationPipe()) updatedInfo: UpdateTodoDto,
+    @Session() session: Record<string, any>
   ) {
-    return this.todoService.update(id, updatedInfo);
+    if (!session.userId) {
+      throw new UnauthorizedException("Not authenticated");
+    }
+
+    return this.todoService.update(id, updatedInfo, session.userId);
   }
 }

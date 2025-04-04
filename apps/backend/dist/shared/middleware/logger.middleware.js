@@ -14,10 +14,10 @@ let LoggerMiddleware = class LoggerMiddleware {
         const { method, originalUrl, ip, body } = req;
         const requestTime = Date.now();
         const data = (0, is_empty_object_1.isObjectEmpty)(body) ? null : JSON.stringify(body);
-        res.on('finish', () => {
+        res.on("finish", () => {
             const { statusCode } = res;
             const responseTime = Date.now() - requestTime;
-            console.log(`${method} ${originalUrl} ${statusCode} - ${responseTime}ms from ${ip} ${data ?? ''}`);
+            console.log(`${method} ${originalUrl} ${statusCode} - ${responseTime}ms from ${ip} ${data ?? ""}`);
         });
         next();
     }

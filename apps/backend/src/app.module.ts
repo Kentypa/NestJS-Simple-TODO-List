@@ -6,10 +6,15 @@ import configuration from "./config/configuration";
 import databaseConfig from "./config/database.config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { Todo } from "./todos/entities/todo.entity";
+import { UserModule } from "./user/user.module";
+import { User } from "./user/entities/user.entity";
+import { AuthModule } from "./auth/auth.module";
 
 @Module({
   imports: [
     TodosModule,
+    UserModule,
+    AuthModule,
     ConfigModule.forRoot({
       load: [configuration, databaseConfig],
       isGlobal: true,
@@ -24,7 +29,7 @@ import { Todo } from "./todos/entities/todo.entity";
         username: configService.get<string>("database.user"),
         password: configService.get<string>("database.password"),
         database: configService.get<string>("database.name"),
-        entities: [Todo],
+        entities: [Todo, User],
         synchronize: true,
       }),
     }),

@@ -18,6 +18,9 @@ const configuration_1 = __importDefault(require("./config/configuration"));
 const database_config_1 = __importDefault(require("./config/database.config"));
 const typeorm_1 = require("@nestjs/typeorm");
 const todo_entity_1 = require("./todos/entities/todo.entity");
+const user_module_1 = require("./user/user.module");
+const user_entity_1 = require("./user/entities/user.entity");
+const auth_module_1 = require("./auth/auth.module");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer.apply(logger_middleware_1.LoggerMiddleware).forRoutes("todos");
@@ -28,6 +31,8 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             todos_module_1.TodosModule,
+            user_module_1.UserModule,
+            auth_module_1.AuthModule,
             config_1.ConfigModule.forRoot({
                 load: [configuration_1.default, database_config_1.default],
                 isGlobal: true,
@@ -42,7 +47,7 @@ exports.AppModule = AppModule = __decorate([
                     username: configService.get("database.user"),
                     password: configService.get("database.password"),
                     database: configService.get("database.name"),
-                    entities: [todo_entity_1.Todo],
+                    entities: [todo_entity_1.Todo, user_entity_1.User],
                     synchronize: true,
                 }),
             }),

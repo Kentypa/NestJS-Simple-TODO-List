@@ -21,29 +21,31 @@ let TodosService = class TodosService {
     constructor(todosRepository) {
         this.todosRepository = todosRepository;
     }
-    async add(todo) {
+    async add(todoDto, userId) {
         const newTodo = this.todosRepository.create({
-            ...todo,
-            isCompleted: false,
+            ...todoDto,
+            user: { id: userId },
         });
         return this.todosRepository.save(newTodo);
     }
-    get() {
-        return this.todosRepository.find();
+    getByUser(userId) {
+        return this.todosRepository.find({ where: { user: { id: userId } } });
     }
-    async getById(id) {
-        const todo = await this.todosRepository.findOne({ where: { id } });
+    async getById(id, userId) {
+        const todo = await this.todosRepository.findOne({
+            where: { id, user: { id: userId } },
+        });
         if (!todo) {
             throw new common_1.NotFoundException(`Todo with id ${id} not found`);
         }
         return todo;
     }
-    async remove(id) {
-        const todo = await this.getById(id);
+    async remove(id, userId) {
+        const todo = await this.getById(id, userId);
         return this.todosRepository.remove(todo);
     }
-    async update(id, todoInfo) {
-        const todo = await this.getById(id);
+    async update(id, todoInfo, userId) {
+        const todo = await this.getById(id, userId);
         const updatedTodo = this.todosRepository.merge(todo, todoInfo);
         return this.todosRepository.save(updatedTodo);
     }
