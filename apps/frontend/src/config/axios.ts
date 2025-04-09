@@ -28,10 +28,9 @@ api.interceptors.response.use(
         isRefreshing = true;
         await api.post("/auth/refresh");
 
-        // Повторяем исходный запрос
         return api(originalRequest);
       } catch (refreshError) {
-        window.location.href = "/login";
+        window.location.href = "/sign-in";
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
