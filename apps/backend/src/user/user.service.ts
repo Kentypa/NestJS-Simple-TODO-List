@@ -5,11 +5,13 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { User } from "./entities/user.entity";
+import { User } from "../shared/entities/user.entity";
 import { UpdateEmailDto } from "./dto/update-email.dto";
 import { UpdatePasswordDto } from "./dto/update-password";
-import { compare, hash } from "bcrypt";
-import { EncryptionConfig } from "src/config/encription";
+import { compare } from "bcrypt";
+import { plainToInstance } from "class-transformer";
+import { GetUserDto } from "./dto/get-user.dto";
+import { hashData } from "src/shared/functions/hash-data.function";
 
 @Injectable()
 export class UserService {
@@ -18,14 +20,8 @@ export class UserService {
     private userRepository: Repository<User>
   ) {}
 
-  async validateUser(email: string, password: string): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { email } });
-
-    if (!user || user.password !== password) {
-      throw new UnauthorizedException("Invalid credentials");
-    }
-
-    return user;
+  async getSafeUser(id: number): Promise<GetUserDto> {
+    return plainToInstance(User, await this.getById(id));
   }
 
   async getById(id: number): Promise<User> {
@@ -61,13 +57,22 @@ export class UserService {
       throw new UnauthorizedException("Passwords not match");
     }
 
-    const newPasswordHashed = await hash(
-      newPassword.newPassword,
-      EncryptionConfig.SALT_OR_ROUNDS
-    );
+    const newPasswordHashed = await hashData(newPassword.newPassword);
 
     const updatedUser = this.userRepository.merge(user, {
       password: newPasswordHashed,
+    });
+
+    return this.userRepository.save(updatedUser);
+  }
+
+  async updateRefreshToken(id: number, refreshToken: string) {
+    const user = await this.getById(id);
+
+    const newRefreshTokenHashed = await hashData(refreshToken);
+
+    const updatedUser = this.userRepository.merge(user, {
+      refreshToken: newRefreshTokenHashed,
     });
 
     return this.userRepository.save(updatedUser);

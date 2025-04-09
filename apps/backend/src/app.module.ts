@@ -7,8 +7,9 @@ import databaseConfig from "./config/database.config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { Todo } from "./todos/entities/todo.entity";
 import { UserModule } from "./user/user.module";
-import { User } from "./user/entities/user.entity";
+import { User } from "./shared/entities/user.entity";
 import { AuthModule } from "./auth/auth.module";
+import jwtConfig from "./config/jwt.config";
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { AuthModule } from "./auth/auth.module";
     UserModule,
     AuthModule,
     ConfigModule.forRoot({
-      load: [configuration, databaseConfig],
+      load: [configuration, databaseConfig, jwtConfig],
       isGlobal: true,
     }),
     TypeOrmModule.forRootAsync({

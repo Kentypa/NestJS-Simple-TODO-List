@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -6,36 +7,119 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { User } from "./entities/auth.entity";
-import { LoginUserDto } from "./dto/login-user.dto";
 import { RegisterUserDto } from "./dto/register-user.dto";
 import { hash, compare } from "bcrypt";
 import { EncryptionConfig } from "src/config/encription";
+import { JwtService } from "@nestjs/jwt";
+import { User } from "src/shared/entities/user.entity";
+import { plainToInstance } from "class-transformer";
+import { ConfigService } from "@nestjs/config";
+import { Response } from "express";
+import { JwtPayload } from "./types/jwt-payload.type";
+import { UserService } from "src/user/user.service";
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
-    private authRepository: Repository<User>
+    private authRepository: Repository<User>,
+    private jwtService: JwtService,
+    private configService: ConfigService,
+    private userService: UserService
   ) {}
 
   async validateUser(email: string, password: string): Promise<User> {
-    const user = await this.authRepository.findOne({ where: { email } });
+    const user = await this.authRepository.findOneBy({ email });
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      throw new UnauthorizedException("User not found");
     }
 
     const isMatch = await compare(password, user.password);
 
     if (!isMatch) {
-      throw new UnauthorizedException("User data is not match");
+      throw new BadRequestException("Passwords is not match");
     }
 
     return user;
   }
 
-  async add(user: RegisterUserDto) {
+  async login(email: string, password: string, response: Response) {
+    const user = await this.validateUser(email, password);
+
+    if (!user) {
+      throw new UnauthorizedException("Invalid credentials");
+    }
+
+    const payload: JwtPayload = {
+      sub: user.id.toString(),
+      username: user.email,
+    };
+
+    const expiresAccessToken = new Date(
+      Date.now() +
+        parseInt(
+          this.configService.getOrThrow<string>("jwt.access_token_expires_in")
+        )
+    );
+
+    const expiresRefreshToken = new Date(
+      Date.now() +
+        parseInt(
+          this.configService.getOrThrow<string>("jwt.refresh_token_expires_in")
+        )
+    );
+
+    const accessToken = this.jwtService.sign(payload, {
+      secret: this.configService.getOrThrow<string>("jwt.access_token_secret"),
+      expiresIn: `${this.configService.getOrThrow<string>(
+        "jwt.access_token_expires_in"
+      )}ms`,
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: this.configService.getOrThrow<string>("jwt.refresh_token_secret"),
+      expiresIn: `${this.configService.getOrThrow<string>(
+        "jwt.refresh_token_expires_in"
+      )}ms`,
+    });
+
+    await this.userService.updateRefreshToken(user.id, refreshToken);
+
+    response.cookie("Authentication", accessToken, {
+      httpOnly: true,
+      secure: false,
+      expires: expiresAccessToken,
+    });
+
+    response.cookie("Refresh", refreshToken, {
+      httpOnly: true,
+      secure: false,
+      expires: expiresRefreshToken,
+    });
+
+    return {
+      success: true,
+    };
+  }
+
+  async verifyUserRefreshToken(refreshToken: string, userId: number) {
+    const user = await this.getById(userId);
+
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+
+    const authenticated = await compare(refreshToken, user.refreshToken);
+
+    if (!authenticated) {
+      throw new UnauthorizedException();
+    }
+
+    return user;
+  }
+
+  async register(user: RegisterUserDto) {
     const existingUser = await this.authRepository.findOne({
       where: { email: user.email },
     });
@@ -44,15 +128,23 @@ export class AuthService {
       throw new ConflictException("Email already in use");
     }
 
-    const password = user.password;
-    const passwordHash = await hash(password, EncryptionConfig.SALT_OR_ROUNDS);
+    const userPassword = user.password;
+    const passwordHash = await hash(
+      userPassword,
+      EncryptionConfig.SALT_OR_ROUNDS
+    );
 
     const newUser = this.authRepository.create({
       email: user.email,
       password: passwordHash,
     });
 
-    return this.authRepository.save(newUser);
+    const result = plainToInstance(
+      User,
+      await this.authRepository.save(newUser)
+    );
+
+    return result;
   }
 
   async getById(id: number): Promise<User> {
@@ -65,25 +157,72 @@ export class AuthService {
     return user;
   }
 
-  async remove(id: number) {
-    const user = await this.getById(id);
-
-    return this.authRepository.remove(user);
-  }
-
-  async update(id: number, userInfo: LoginUserDto) {
-    const user = await this.getById(id);
-
-    const password = userInfo.password;
-    const passwordHash = await hash(password, EncryptionConfig.SALT_OR_ROUNDS);
-
-    const newUser = this.authRepository.create({
-      email: userInfo.email,
-      password: passwordHash,
+  async logout(response: Response) {
+    response.clearCookie("Authentication", {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
     });
 
-    const updatedUser = this.authRepository.merge(user, newUser);
+    response.clearCookie("Refresh", {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+    });
 
-    return this.authRepository.save(updatedUser);
+    return { success: true };
+  }
+
+  async refresh(user: User, response: Response) {
+    const payload: JwtPayload = {
+      sub: user.id.toString(),
+      username: user.email,
+    };
+
+    const expiresAccessToken = new Date(
+      Date.now() +
+        parseInt(
+          this.configService.getOrThrow<string>("jwt.access_token_expires_in")
+        )
+    );
+
+    const expiresRefreshToken = new Date(
+      Date.now() +
+        parseInt(
+          this.configService.getOrThrow<string>("jwt.refresh_token_expires_in")
+        )
+    );
+
+    const accessToken = this.jwtService.sign(payload, {
+      secret: this.configService.getOrThrow<string>("jwt.access_token_secret"),
+      expiresIn: `${this.configService.getOrThrow<string>(
+        "jwt.access_token_expires_in"
+      )}ms`,
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: this.configService.getOrThrow<string>("jwt.refresh_token_secret"),
+      expiresIn: `${this.configService.getOrThrow<string>(
+        "jwt.refresh_token_expires_in"
+      )}ms`,
+    });
+
+    await this.userService.updateRefreshToken(user.id, refreshToken);
+
+    response.cookie("Authentication", accessToken, {
+      httpOnly: true,
+      secure: false,
+      expires: expiresAccessToken,
+    });
+
+    response.cookie("Refresh", refreshToken, {
+      httpOnly: true,
+      secure: false,
+      expires: expiresRefreshToken,
+    });
+
+    return {
+      success: true,
+    };
   }
 }

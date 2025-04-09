@@ -2,12 +2,13 @@ import {
   Body,
   Controller,
   HttpCode,
-  InternalServerErrorException,
   Post,
-  Session,
   UseFilters,
+  UseGuards,
   ValidationPipe,
+  Res,
 } from "@nestjs/common";
+import { Response } from "express";
 import { HttpExceptionFilter } from "src/shared/filters/http-exception.filter";
 import {
   ApiBearerAuth,
@@ -19,6 +20,11 @@ import {
 import { RegisterUserDto } from "./dto/register-user.dto";
 import { LoginUserDto } from "./dto/login-user.dto";
 import { AuthService } from "./auth.service";
+import { JwtAuthGuard } from "src/shared/guards/jwt-auth.guard";
+import { LocalAuthGuard } from "./guards/local-auth.guard";
+import { JwtRefreshAuthGuard } from "src/shared/guards/jwt-refresh.guard";
+import { UserDecorator } from "src/shared/decorators/user.decorator";
+import { User } from "src/shared/entities/user.entity";
 
 @ApiBearerAuth()
 @ApiTags("auth")
@@ -27,7 +33,7 @@ import { AuthService } from "./auth.service";
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @Post("sign-up")
+  @Post("register")
   @ApiOperation({ summary: "Add user to database" })
   @ApiResponse({
     status: 201,
@@ -38,11 +44,12 @@ export class AuthController {
     description: "User information",
   })
   @HttpCode(201)
-  async addUser(@Body(new ValidationPipe()) addUser: RegisterUserDto) {
-    return this.authService.add(addUser);
+  async register(@Body(new ValidationPipe()) registeredUser: RegisterUserDto) {
+    return this.authService.register(registeredUser);
   }
 
-  @Post("sign-in")
+  @UseGuards(LocalAuthGuard)
+  @Post("login")
   @ApiOperation({ summary: "Login user" })
   @ApiResponse({
     status: 201,
@@ -53,20 +60,14 @@ export class AuthController {
     description: "User information",
   })
   @HttpCode(201)
-  async signIn(
+  async login(
     @Body(new ValidationPipe()) user: LoginUserDto,
-    @Session() session: Record<string, any>
+    @Res({ passthrough: true }) response: Response
   ) {
-    const validatedUser = await this.authService.validateUser(
-      user.email,
-      user.password
-    );
-
-    session.userId = validatedUser.id;
-
-    return { success: true };
+    return await this.authService.login(user.email, user.password, response);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post("logout")
   @ApiOperation({ summary: "Logout user" })
   @ApiResponse({
@@ -74,12 +75,30 @@ export class AuthController {
     description: "User logout successfully",
   })
   @HttpCode(200)
-  async logout(@Session() session: Record<string, any>) {
-    session.destroy((err: Error) => {
-      if (err) {
-        throw new InternalServerErrorException("Could not log out");
-      }
-    });
-    return { success: true };
+  async logout(@Res({ passthrough: true }) response: Response) {
+    return this.authService.logout(response);
+  }
+
+  @UseGuards(JwtRefreshAuthGuard)
+  @Post("refresh")
+  @ApiOperation({ summary: "Refresh user token" })
+  @ApiResponse({
+    status: 200,
+    description: "User token refreshed successfully",
+  })
+  @ApiBody({
+    type: LoginUserDto,
+    description: "User information",
+  })
+  @HttpCode(200)
+  @UseGuards(JwtRefreshAuthGuard)
+  @UseGuards(JwtRefreshAuthGuard)
+  @Post("refresh")
+  @HttpCode(200)
+  async refreshToken(
+    @Res({ passthrough: true }) response: Response,
+    @UserDecorator() user: User
+  ) {
+    return this.authService.refresh(user, response);
   }
 }

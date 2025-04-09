@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, useMemo } from "react";
 import { TodoList } from "../TodoList";
 import { useForm } from "../../hooks/use-form";
 import { todoService } from "../../services/todoService";
@@ -8,7 +8,7 @@ import { Queries } from "../../enums/queries";
 export const TodosContent: FC = () => {
   const queryClient = useQueryClient();
 
-  const { addTodo, getTodos } = todoService("/todos");
+  const { addTodo, getTodos } = useMemo(() => todoService("/todos"), []);
 
   const { data, isSuccess, isLoading, isError, error } = useQuery({
     queryKey: [Queries.TODOS],

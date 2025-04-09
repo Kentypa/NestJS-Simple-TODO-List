@@ -66,7 +66,12 @@ export const SignUpPage: FC = () => {
         </button>
       </form>
       {registerMutation.isError && (
-        <h2>Can`t register: {registerMutation.error.message}</h2>
+        <h2>
+          Can`t register:{" "}
+          {registerMutation.error.message.includes("409")
+            ? "This email is already used"
+            : registerMutation.error.message}
+        </h2>
       )}
     </PageWrapper>
   );

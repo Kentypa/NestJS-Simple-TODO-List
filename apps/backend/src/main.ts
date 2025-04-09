@@ -4,6 +4,7 @@ import { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
 import session from "express-session";
+import cookieParser from "cookie-parser";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -29,7 +30,8 @@ async function bootstrap() {
       secret: "my-secret",
       resave: false,
       saveUninitialized: false,
-    })
+    }),
+    cookieParser()
   );
 
   await app.listen(configService.get("backend.port") as number);

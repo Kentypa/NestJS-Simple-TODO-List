@@ -1,4 +1,4 @@
-import { User } from "src/user/entities/user.entity";
+import { User } from "src/shared/entities/user.entity";
 import {
   Entity,
   Column,

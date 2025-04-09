@@ -13,6 +13,7 @@ export class TodosService {
   ) {}
 
   async add(todoDto: AddTodoDto, userId: number) {
+    console.log("Creating todo for user:", userId);
     const newTodo = this.todosRepository.create({
       ...todoDto,
       user: { id: userId },

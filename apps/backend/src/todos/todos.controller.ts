@@ -8,9 +8,8 @@ import {
   Post,
   Put,
   Query,
-  Session,
-  UnauthorizedException,
   UseFilters,
+  UseGuards,
   ValidationPipe,
 } from "@nestjs/common";
 import { TodosService } from "./todos.service";
@@ -25,11 +24,15 @@ import {
   ApiQuery,
   ApiBody,
 } from "@nestjs/swagger";
+import { UserDecorator } from "src/shared/decorators/user.decorator";
+import { User } from "src/shared/entities/user.entity";
+import { JwtAuthGuard } from "src/shared/guards/jwt-auth.guard";
 
 @ApiBearerAuth()
 @ApiTags("todos")
 @Controller("todos")
 @UseFilters(HttpExceptionFilter)
+@UseGuards(JwtAuthGuard)
 export class TodosController {
   constructor(private todoService: TodosService) {}
 
@@ -37,11 +40,8 @@ export class TodosController {
   @ApiOperation({ summary: "Get user's todos" })
   @ApiResponse({ status: 200, description: "Array of todos" })
   @HttpCode(200)
-  async getTodos(@Session() session: Record<string, any>) {
-    if (!session.userId) {
-      throw new UnauthorizedException("Not authenticated");
-    }
-    return this.todoService.getByUser(session.userId);
+  async getTodos(@UserDecorator() user: User) {
+    return this.todoService.getByUser(user.id);
   }
 
   @Post()
@@ -51,12 +51,9 @@ export class TodosController {
   @HttpCode(201)
   async addTodo(
     @Body(new ValidationPipe()) addTodo: AddTodoDto,
-    @Session() session: Record<string, any>
+    @UserDecorator() user: User
   ) {
-    if (!session.userId) {
-      throw new UnauthorizedException("Not authenticated");
-    }
-    return this.todoService.add(addTodo, session.userId);
+    return this.todoService.add(addTodo, user.id);
   }
 
   @Delete()
@@ -66,12 +63,9 @@ export class TodosController {
   @HttpCode(200)
   async removeTodo(
     @Query("id", ParseIntPipe) id: number,
-    @Session() session: Record<string, any>
+    @UserDecorator() user: User
   ) {
-    if (!session.userId) {
-      throw new UnauthorizedException("Not authenticated");
-    }
-    return this.todoService.remove(id, session.userId);
+    return this.todoService.remove(id, user.id);
   }
 
   @Put()
@@ -83,12 +77,8 @@ export class TodosController {
   async updateTodo(
     @Query("id", ParseIntPipe) id: number,
     @Body(new ValidationPipe()) updatedInfo: UpdateTodoDto,
-    @Session() session: Record<string, any>
+    @UserDecorator() user: User
   ) {
-    if (!session.userId) {
-      throw new UnauthorizedException("Not authenticated");
-    }
-
-    return this.todoService.update(id, updatedInfo, session.userId);
+    return this.todoService.update(id, updatedInfo, user.id);
   }
 }

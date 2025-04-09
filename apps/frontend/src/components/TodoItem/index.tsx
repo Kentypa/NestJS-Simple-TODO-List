@@ -1,4 +1,4 @@
-import { ChangeEvent, FC, KeyboardEvent } from "react";
+import { ChangeEvent, FC, KeyboardEvent, memo, useMemo } from "react";
 import { TodoItemType } from "../../types/todo-item";
 import { useTodoItem } from "../../hooks/use-todo-item";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,10 +11,10 @@ type TodoItemProps = {
   todo: TodoItemType;
 };
 
-export const TodoItem: FC<TodoItemProps> = ({ todo }) => {
+export const TodoItem: FC<TodoItemProps> = memo(({ todo }) => {
   const queryClient = useQueryClient();
 
-  const { removeTodo, updateTodo } = todoService("/todos");
+  const { removeTodo, updateTodo } = useMemo(() => todoService("/todos"), []);
 
   const { task, id, isCompleted } = todo;
 
@@ -103,4 +103,4 @@ export const TodoItem: FC<TodoItemProps> = ({ todo }) => {
       )}
     </div>
   );
-};
+});

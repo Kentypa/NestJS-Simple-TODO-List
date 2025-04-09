@@ -5,9 +5,8 @@ import {
   Get,
   HttpCode,
   Put,
-  Session,
-  UnauthorizedException,
   UseFilters,
+  UseGuards,
   ValidationPipe,
 } from "@nestjs/common";
 import { HttpExceptionFilter } from "src/shared/filters/http-exception.filter";
@@ -23,11 +22,15 @@ import { UserService } from "./user.service";
 import { GetUserDto } from "./dto/get-user.dto";
 import { UpdateEmailDto } from "./dto/update-email.dto";
 import { UpdatePasswordDto } from "./dto/update-password";
+import { UserDecorator } from "src/shared/decorators/user.decorator";
+import { User } from "src/shared/entities/user.entity";
+import { JwtAuthGuard } from "src/shared/guards/jwt-auth.guard";
 
 @ApiBearerAuth()
 @ApiTags("user")
 @Controller("user")
 @UseFilters(HttpExceptionFilter)
+@UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private userService: UserService) {}
   @Get("me")
@@ -38,14 +41,8 @@ export class UserController {
     type: GetUserDto,
   })
   @HttpCode(200)
-  async getCurrentUser(
-    @Session() session: Record<string, any>
-  ): Promise<GetUserDto> {
-    if (!session.userId) {
-      throw new UnauthorizedException("Not authenticated");
-    }
-
-    return this.userService.getById(session.userId);
+  async getCurrentUser(@UserDecorator() user: User): Promise<GetUserDto> {
+    return this.userService.getSafeUser(user.id);
   }
 
   @Delete()
@@ -61,8 +58,8 @@ export class UserController {
     example: 1,
   })
   @HttpCode(200)
-  async removeUser(@Session() session: Record<string, any>) {
-    return this.userService.remove(session.userId);
+  async removeUser(@UserDecorator() user: User) {
+    return this.userService.remove(user.id);
   }
 
   @Put("update-email")
@@ -78,9 +75,9 @@ export class UserController {
   @HttpCode(200)
   async updateUserEmail(
     @Body(new ValidationPipe()) newEmail: UpdateEmailDto,
-    @Session() session: Record<string, any>
+    @UserDecorator() user: User
   ) {
-    return this.userService.updateEmail(session.userId, newEmail);
+    return this.userService.updateEmail(user.id, newEmail);
   }
 
   @Put("update-password")
@@ -96,8 +93,8 @@ export class UserController {
   @HttpCode(200)
   async updateUserPassword(
     @Body(new ValidationPipe()) newPassword: UpdatePasswordDto,
-    @Session() session: Record<string, any>
+    @UserDecorator() user: User
   ) {
-    return this.userService.updatePassword(session.userId, newPassword);
+    return this.userService.updatePassword(user.id, newPassword);
   }
 }

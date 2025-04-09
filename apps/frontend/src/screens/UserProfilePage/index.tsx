@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from "react";
+import { FC, useCallback, useEffect, useState } from "react";
 import { PageWrapper } from "../../components/UI/PageWrapper";
 import { useForm } from "../../hooks/use-form";
 import { EditableInput } from "../../components/UI/EditableInput";
@@ -23,8 +23,10 @@ export const UserProfilePage: FC = () => {
 
   const [isPasswordModalVisible, setIsPasswordModalVisible] = useState(false);
 
-  const togglePasswordModal = () =>
-    setIsPasswordModalVisible(!isPasswordModalVisible);
+  const togglePasswordModal = useCallback(
+    () => setIsPasswordModalVisible(!isPasswordModalVisible),
+    [isPasswordModalVisible]
+  );
 
   const {
     data: user,
@@ -76,7 +78,7 @@ export const UserProfilePage: FC = () => {
       handleChangeByValue("email", user.email);
       handleChangeByValue("password", user.password);
     }
-  }, [isSuccess]);
+  }, [handleChangeByValue, isSuccess, user]);
 
   return (
     <PageWrapper>

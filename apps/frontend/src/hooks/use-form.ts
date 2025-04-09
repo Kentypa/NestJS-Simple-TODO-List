@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useState, useCallback } from "react";
 import { formObject } from "../types/form-object";
 
 export function useForm(
@@ -7,25 +7,33 @@ export function useForm(
 ) {
   const [formState, setFormState] = useState(initialState);
 
-  function handleChange(e: ChangeEvent<HTMLInputElement>) {
+  const handleChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormState((prevState) => ({
       ...prevState,
       [name]: value,
     }));
-  }
+  }, []);
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    onSubmit?.(formState);
-  }
+  const handleSubmit = useCallback(
+    (e: FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      onSubmit?.(formState);
+    },
+    [formState, onSubmit]
+  );
 
-  function handleChangeByValue(name: string, value: string | number) {
-    setFormState((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
-  }
+  const handleChangeByValue = useCallback(
+    (name: string, value: string | number) => {
+      setFormState((prevState) => {
+        if (prevState[name] !== value) {
+          return { ...prevState, [name]: value };
+        }
+        return prevState;
+      });
+    },
+    []
+  );
 
   return { formState, handleChange, handleChangeByValue, handleSubmit };
 }
