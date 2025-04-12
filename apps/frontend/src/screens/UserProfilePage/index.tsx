@@ -10,8 +10,12 @@ import { RoutesPaths } from "../../enums/routes-path";
 import { authService } from "../../services/authService";
 import { Modal } from "../../components/UI/Modal";
 import { PasswordForm } from "../../components/PasswordForm";
+import { useDispatch } from "react-redux";
+import { setAuth } from "../../stores/auth/authSlice";
 
 export const UserProfilePage: FC = () => {
+  const dispatch = useDispatch();
+
   const { getCurrentUser, updateEmail, updatePassword, deleteUser } =
     userService(Queries.USER);
 
@@ -39,8 +43,12 @@ export const UserProfilePage: FC = () => {
 
   const logoutMutation = useMutation({
     mutationFn: logoutUser,
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["user"] });
+
+      if (response.status === 200) {
+        dispatch(setAuth(false));
+      }
     },
   });
 
@@ -63,8 +71,19 @@ export const UserProfilePage: FC = () => {
     mutationFn: deleteUser,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user"] });
+      dispatch(setAuth(false));
     },
   });
+
+  function handleLogout() {
+    logoutMutation.mutate();
+    navigation(RoutesPaths.MAIN_PAGE);
+  }
+
+  function handleDeleteAccount() {
+    deleteAccountMutation.mutate();
+    navigation(RoutesPaths.MAIN_PAGE);
+  }
 
   const { handleSubmit, handleChangeByValue } = useForm(
     { email: "", password: "" },
@@ -141,20 +160,14 @@ export const UserProfilePage: FC = () => {
               <button
                 type="button"
                 className="bg-gray-300 text-gray-800 px-6 py-3 rounded-md text-lg font-medium hover:bg-gray-400 transition duration-300"
-                onClick={() => {
-                  logoutMutation.mutate();
-                  navigation(RoutesPaths.MAIN_PAGE);
-                }}
+                onClick={handleLogout}
               >
                 Logout
               </button>
               <button
                 type="button"
                 className="bg-red-300 text-gray-800 px-6 py-3 rounded-md text-lg font-medium hover:bg-red-400 transition duration-300"
-                onClick={() => {
-                  deleteAccountMutation.mutate();
-                  navigation(RoutesPaths.MAIN_PAGE);
-                }}
+                onClick={handleDeleteAccount}
               >
                 Remove user accout
               </button>

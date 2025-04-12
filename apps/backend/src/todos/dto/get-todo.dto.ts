@@ -1,7 +1,8 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsBoolean, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsNotEmpty, IsNumber } from "class-validator";
+import { BaseTodoDto } from "./base-todo.dto";
 
-export class GetTodoDto {
+export class GetTodoDto extends BaseTodoDto {
   @IsNumber()
   @IsNotEmpty()
   @ApiProperty({
@@ -11,22 +12,4 @@ export class GetTodoDto {
     minimum: 1,
   })
   id: number;
-
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty({
-    example: "Make a button with properties...",
-    description: "Description of todo",
-    type: "string",
-  })
-  task: string;
-
-  @IsBoolean()
-  @IsNotEmpty()
-  @ApiProperty({
-    example: true,
-    description: "Status of todo completition",
-    type: "boolean",
-  })
-  isCompleted: boolean;
 }

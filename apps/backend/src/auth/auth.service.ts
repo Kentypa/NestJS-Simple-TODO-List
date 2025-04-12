@@ -7,9 +7,7 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { RegisterUserDto } from "./dto/register-user.dto";
-import { hash, compare } from "bcrypt";
-import { EncryptionConfig } from "src/config/encription";
+import { compare } from "bcrypt";
 import { JwtService } from "@nestjs/jwt";
 import { User } from "src/shared/entities/user.entity";
 import { plainToInstance } from "class-transformer";
@@ -17,6 +15,10 @@ import { ConfigService } from "@nestjs/config";
 import { Response } from "express";
 import { JwtPayload } from "./types/jwt-payload.type";
 import { UserService } from "src/user/user.service";
+import { calculateTokenExpires } from "src/shared/functions/calculate-token-expires";
+import { RegisterUserDto } from "./dto/register-user.dto";
+import { EncryptionService } from "src/shared/services/encryption.service";
+import { SuccessResponseDto } from "./dto/success-response.dto";
 
 @Injectable()
 export class AuthService {
@@ -25,8 +27,60 @@ export class AuthService {
     private authRepository: Repository<User>,
     private jwtService: JwtService,
     private configService: ConfigService,
-    private userService: UserService
+    private userService: UserService,
+    private encryptionService: EncryptionService
   ) {}
+
+  private generateTokens(payload: JwtPayload) {
+    const expiresAccessToken = calculateTokenExpires(
+      this.configService.getOrThrow<string>("jwt.access_token_expires_in")
+    );
+
+    const expiresRefreshToken = calculateTokenExpires(
+      this.configService.getOrThrow<string>("jwt.refresh_token_expires_in")
+    );
+
+    const accessToken = this.jwtService.sign(payload, {
+      secret: this.configService.getOrThrow<string>("jwt.access_token_secret"),
+      expiresIn: `${this.configService.getOrThrow<string>(
+        "jwt.access_token_expires_in"
+      )}ms`,
+    });
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: this.configService.getOrThrow<string>("jwt.refresh_token_secret"),
+      expiresIn: `${this.configService.getOrThrow<string>(
+        "jwt.refresh_token_expires_in"
+      )}ms`,
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+      expiresAccessToken,
+      expiresRefreshToken,
+    };
+  }
+
+  private setAuthCookies(
+    response: Response,
+    accessToken: string,
+    refreshToken: string,
+    accessExpires: Date,
+    refreshExpires: Date
+  ) {
+    response.cookie("Authentication", accessToken, {
+      httpOnly: true,
+      secure: false,
+      expires: accessExpires,
+    });
+
+    response.cookie("Refresh", refreshToken, {
+      httpOnly: true,
+      secure: false,
+      expires: refreshExpires,
+    });
+  }
 
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.authRepository.findOneBy({ email });
@@ -44,7 +98,11 @@ export class AuthService {
     return user;
   }
 
-  async login(email: string, password: string, response: Response) {
+  async login(
+    email: string,
+    password: string,
+    response: Response
+  ): Promise<SuccessResponseDto> {
     const user = await this.validateUser(email, password);
 
     if (!user) {
@@ -56,47 +114,22 @@ export class AuthService {
       username: user.email,
     };
 
-    const expiresAccessToken = new Date(
-      Date.now() +
-        parseInt(
-          this.configService.getOrThrow<string>("jwt.access_token_expires_in")
-        )
-    );
-
-    const expiresRefreshToken = new Date(
-      Date.now() +
-        parseInt(
-          this.configService.getOrThrow<string>("jwt.refresh_token_expires_in")
-        )
-    );
-
-    const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.getOrThrow<string>("jwt.access_token_secret"),
-      expiresIn: `${this.configService.getOrThrow<string>(
-        "jwt.access_token_expires_in"
-      )}ms`,
-    });
-
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.getOrThrow<string>("jwt.refresh_token_secret"),
-      expiresIn: `${this.configService.getOrThrow<string>(
-        "jwt.refresh_token_expires_in"
-      )}ms`,
-    });
+    const {
+      accessToken,
+      expiresAccessToken,
+      expiresRefreshToken,
+      refreshToken,
+    } = this.generateTokens(payload);
 
     await this.userService.updateRefreshToken(user.id, refreshToken);
 
-    response.cookie("Authentication", accessToken, {
-      httpOnly: true,
-      secure: false,
-      expires: expiresAccessToken,
-    });
-
-    response.cookie("Refresh", refreshToken, {
-      httpOnly: true,
-      secure: false,
-      expires: expiresRefreshToken,
-    });
+    this.setAuthCookies(
+      response,
+      accessToken,
+      refreshToken,
+      expiresAccessToken,
+      expiresRefreshToken
+    );
 
     return {
       success: true,
@@ -119,7 +152,7 @@ export class AuthService {
     return user;
   }
 
-  async register(user: RegisterUserDto) {
+  async register(user: RegisterUserDto): Promise<User> {
     const existingUser = await this.authRepository.findOne({
       where: { email: user.email },
     });
@@ -128,11 +161,7 @@ export class AuthService {
       throw new ConflictException("Email already in use");
     }
 
-    const userPassword = user.password;
-    const passwordHash = await hash(
-      userPassword,
-      EncryptionConfig.SALT_OR_ROUNDS
-    );
+    const passwordHash = await this.encryptionService.hashData(user.password);
 
     const newUser = this.authRepository.create({
       email: user.email,
@@ -157,7 +186,7 @@ export class AuthService {
     return user;
   }
 
-  async logout(response: Response) {
+  async logout(response: Response): Promise<SuccessResponseDto> {
     response.clearCookie("Authentication", {
       httpOnly: true,
       secure: false,
@@ -173,53 +202,28 @@ export class AuthService {
     return { success: true };
   }
 
-  async refresh(user: User, response: Response) {
+  async refresh(user: User, response: Response): Promise<SuccessResponseDto> {
     const payload: JwtPayload = {
       sub: user.id.toString(),
       username: user.email,
     };
 
-    const expiresAccessToken = new Date(
-      Date.now() +
-        parseInt(
-          this.configService.getOrThrow<string>("jwt.access_token_expires_in")
-        )
-    );
-
-    const expiresRefreshToken = new Date(
-      Date.now() +
-        parseInt(
-          this.configService.getOrThrow<string>("jwt.refresh_token_expires_in")
-        )
-    );
-
-    const accessToken = this.jwtService.sign(payload, {
-      secret: this.configService.getOrThrow<string>("jwt.access_token_secret"),
-      expiresIn: `${this.configService.getOrThrow<string>(
-        "jwt.access_token_expires_in"
-      )}ms`,
-    });
-
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: this.configService.getOrThrow<string>("jwt.refresh_token_secret"),
-      expiresIn: `${this.configService.getOrThrow<string>(
-        "jwt.refresh_token_expires_in"
-      )}ms`,
-    });
+    const {
+      accessToken,
+      expiresAccessToken,
+      expiresRefreshToken,
+      refreshToken,
+    } = this.generateTokens(payload);
 
     await this.userService.updateRefreshToken(user.id, refreshToken);
 
-    response.cookie("Authentication", accessToken, {
-      httpOnly: true,
-      secure: false,
-      expires: expiresAccessToken,
-    });
-
-    response.cookie("Refresh", refreshToken, {
-      httpOnly: true,
-      secure: false,
-      expires: expiresRefreshToken,
-    });
+    this.setAuthCookies(
+      response,
+      accessToken,
+      refreshToken,
+      expiresAccessToken,
+      expiresRefreshToken
+    );
 
     return {
       success: true,

@@ -17,7 +17,6 @@ import {
   ApiResponse,
   ApiBody,
 } from "@nestjs/swagger";
-import { RegisterUserDto } from "./dto/register-user.dto";
 import { LoginUserDto } from "./dto/login-user.dto";
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "src/shared/guards/jwt-auth.guard";
@@ -25,6 +24,8 @@ import { LocalAuthGuard } from "./guards/local-auth.guard";
 import { JwtRefreshAuthGuard } from "src/shared/guards/jwt-refresh.guard";
 import { UserDecorator } from "src/shared/decorators/user.decorator";
 import { User } from "src/shared/entities/user.entity";
+import { RegisterUserDto } from "./dto/register-user.dto";
+import { SuccessResponseDto } from "./dto/success-response.dto";
 
 @ApiBearerAuth()
 @ApiTags("auth")
@@ -38,6 +39,7 @@ export class AuthController {
   @ApiResponse({
     status: 201,
     description: "User created successfully",
+    type: User,
   })
   @ApiBody({
     type: RegisterUserDto,
@@ -54,6 +56,7 @@ export class AuthController {
   @ApiResponse({
     status: 201,
     description: "User logged successfully",
+    type: SuccessResponseDto,
   })
   @ApiBody({
     type: LoginUserDto,
@@ -73,6 +76,7 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: "User logout successfully",
+    type: SuccessResponseDto,
   })
   @HttpCode(200)
   async logout(@Res({ passthrough: true }) response: Response) {
@@ -85,14 +89,9 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: "User token refreshed successfully",
-  })
-  @ApiBody({
-    type: LoginUserDto,
-    description: "User information",
+    type: SuccessResponseDto,
   })
   @HttpCode(200)
-  @UseGuards(JwtRefreshAuthGuard)
-  @UseGuards(JwtRefreshAuthGuard)
   @Post("refresh")
   @HttpCode(200)
   async refreshToken(

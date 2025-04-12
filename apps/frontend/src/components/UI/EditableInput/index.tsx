@@ -22,6 +22,9 @@ export const EditableInput: FC<EditableInputProps> = memo(
       toggleEditing();
     };
 
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) =>
+      setTempValue(e.target.value);
+
     return (
       <div className="bg-gray-100 p-4 border rounded-xl flex justify-between items-center">
         <div className="flex items-center gap-2 w-full justify-between">
@@ -32,9 +35,7 @@ export const EditableInput: FC<EditableInputProps> = memo(
                 value={tempValue}
                 className="p-2 border rounded-md w-full text-gray-700"
                 autoComplete="on"
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setTempValue(e.target.value)
-                }
+                onChange={handleChange}
               />
               <button
                 type="button"

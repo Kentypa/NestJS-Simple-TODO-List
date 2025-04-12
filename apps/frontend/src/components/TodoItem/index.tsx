@@ -6,6 +6,7 @@ import { Queries } from "../../enums/queries";
 import { todoService } from "../../services/todoService";
 import { TodoActionButtons } from "../TodoActionButtons";
 import TextareaAutosize from "react-textarea-autosize";
+import { RoutesPaths } from "../../enums/routes-path";
 
 type TodoItemProps = {
   todo: TodoItemType;
@@ -14,7 +15,10 @@ type TodoItemProps = {
 export const TodoItem: FC<TodoItemProps> = memo(({ todo }) => {
   const queryClient = useQueryClient();
 
-  const { removeTodo, updateTodo } = useMemo(() => todoService("/todos"), []);
+  const { removeTodo, updateTodo } = useMemo(
+    () => todoService(RoutesPaths.TODOS),
+    []
+  );
 
   const { task, id, isCompleted } = todo;
 
@@ -74,6 +78,10 @@ export const TodoItem: FC<TodoItemProps> = memo(({ todo }) => {
     });
   }
 
+  function handleRemove() {
+    removeTodoMutation.mutate(id);
+  }
+
   return (
     <div className="relative flex justify-between w-full p-4 bg-gray-500">
       <div className="flex gap-2 items-center">
@@ -97,7 +105,7 @@ export const TodoItem: FC<TodoItemProps> = memo(({ todo }) => {
       </div>
       {!isEditing && (
         <TodoActionButtons
-          handleRemove={() => removeTodoMutation.mutate(id)}
+          handleRemove={handleRemove}
           toggleEditing={toggleEditing}
         />
       )}

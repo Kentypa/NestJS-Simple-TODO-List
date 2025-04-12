@@ -4,7 +4,7 @@ import {
   Delete,
   Get,
   HttpCode,
-  Put,
+  Patch,
   UseFilters,
   UseGuards,
   ValidationPipe,
@@ -62,7 +62,7 @@ export class UserController {
     return this.userService.remove(user.id);
   }
 
-  @Put("update-email")
+  @Patch("update-email")
   @ApiOperation({ summary: "Update user email from database" })
   @ApiResponse({
     status: 200,
@@ -80,7 +80,7 @@ export class UserController {
     return this.userService.updateEmail(user.id, newEmail);
   }
 
-  @Put("update-password")
+  @Patch("update-password")
   @ApiOperation({ summary: "Update user password from database" })
   @ApiResponse({
     status: 200,

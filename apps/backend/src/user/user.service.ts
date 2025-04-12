@@ -11,13 +11,14 @@ import { UpdatePasswordDto } from "./dto/update-password";
 import { compare } from "bcrypt";
 import { plainToInstance } from "class-transformer";
 import { GetUserDto } from "./dto/get-user.dto";
-import { hashData } from "src/shared/functions/hash-data.function";
+import { EncryptionService } from "src/shared/services/encryption.service";
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
-    private userRepository: Repository<User>
+    private userRepository: Repository<User>,
+    private encryptionService: EncryptionService
   ) {}
 
   async getSafeUser(id: number): Promise<GetUserDto> {
@@ -57,7 +58,9 @@ export class UserService {
       throw new UnauthorizedException("Passwords not match");
     }
 
-    const newPasswordHashed = await hashData(newPassword.newPassword);
+    const newPasswordHashed = await this.encryptionService.hashData(
+      newPassword.newPassword
+    );
 
     const updatedUser = this.userRepository.merge(user, {
       password: newPasswordHashed,
@@ -69,7 +72,9 @@ export class UserService {
   async updateRefreshToken(id: number, refreshToken: string) {
     const user = await this.getById(id);
 
-    const newRefreshTokenHashed = await hashData(refreshToken);
+    const newRefreshTokenHashed = await this.encryptionService.hashData(
+      refreshToken
+    );
 
     const updatedUser = this.userRepository.merge(user, {
       refreshToken: newRefreshTokenHashed,

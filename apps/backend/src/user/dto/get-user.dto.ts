@@ -1,7 +1,8 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsNotEmpty, IsNumber } from "class-validator";
+import { BaseUserDto } from "./base-user.dto";
 
-export class GetUserDto {
+export class GetUserDto extends BaseUserDto {
   @IsNumber()
   @IsNotEmpty()
   @ApiProperty({
@@ -11,13 +12,4 @@ export class GetUserDto {
     minimum: 1,
   })
   id: number;
-
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty({
-    example: "test@gmail.com",
-    description: "User email",
-    type: "string",
-  })
-  email: string;
 }

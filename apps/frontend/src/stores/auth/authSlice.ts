@@ -5,7 +5,7 @@ export type AuthState = {
 };
 
 const initialState: AuthState = {
-  isAuth: false,
+  isAuth: JSON.parse(localStorage.getItem("isAuth") || "false"),
 };
 
 export const authSlice = createSlice({
@@ -14,6 +14,7 @@ export const authSlice = createSlice({
   reducers: {
     setAuth: (state, action: PayloadAction<boolean>) => {
       state.isAuth = action.payload;
+      localStorage.setItem("isAuth", JSON.stringify(action.payload));
     },
   },
 });

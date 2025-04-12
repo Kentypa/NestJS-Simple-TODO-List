@@ -4,11 +4,15 @@ import { useForm } from "../../hooks/use-form";
 import { todoService } from "../../services/todoService";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Queries } from "../../enums/queries";
+import { RoutesPaths } from "../../enums/routes-path";
 
 export const TodosContent: FC = () => {
   const queryClient = useQueryClient();
 
-  const { addTodo, getTodos } = useMemo(() => todoService("/todos"), []);
+  const { addTodo, getTodos } = useMemo(
+    () => todoService(RoutesPaths.TODOS),
+    []
+  );
 
   const { data, isSuccess, isLoading, isError, error } = useQuery({
     queryKey: [Queries.TODOS],

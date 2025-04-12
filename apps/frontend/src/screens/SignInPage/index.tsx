@@ -6,8 +6,11 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { RoutesPaths } from "../../enums/routes-path";
 import { authService } from "../../services/authService";
+import { useDispatch } from "react-redux";
+import { setAuth } from "../../stores/auth/authSlice";
 
 export const SignInPage: FC = () => {
+  const dispatch = useDispatch();
   const { signInUser } = authService(Queries.AUTH);
   const navigate = useNavigate();
 
@@ -15,8 +18,12 @@ export const SignInPage: FC = () => {
 
   const loginMutation = useMutation({
     mutationFn: signInUser,
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ["user"] });
+
+      if (response.status === 201) {
+        dispatch(setAuth(true));
+      }
     },
   });
 

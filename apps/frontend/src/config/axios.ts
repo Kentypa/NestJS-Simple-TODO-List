@@ -1,4 +1,6 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
+import { store } from "../stores/store";
+import { setAuth } from "../stores/auth/authSlice";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_BE_URL ?? "http://localhost:3000",
@@ -27,10 +29,12 @@ api.interceptors.response.use(
       try {
         isRefreshing = true;
         await api.post("/auth/refresh");
+        store.dispatch(setAuth(true));
 
         return api(originalRequest);
       } catch (refreshError) {
-        window.location.href = "/sign-in";
+        store.dispatch(setAuth(false));
+
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

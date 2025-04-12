@@ -2,14 +2,15 @@ import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
 import { TodosModule } from "./todos/todos.module";
 import { LoggerMiddleware } from "./shared/middleware/logger.middleware";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import configuration from "./config/configuration";
-import databaseConfig from "./config/database.config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { Todo } from "./todos/entities/todo.entity";
 import { UserModule } from "./user/user.module";
 import { User } from "./shared/entities/user.entity";
 import { AuthModule } from "./auth/auth.module";
 import jwtConfig from "./config/jwt.config";
+import encryptionConfig from "./config/encription.config";
+import configuration from "./config/configuration.config";
+import databaseConfig from "./config/database.config";
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import jwtConfig from "./config/jwt.config";
     UserModule,
     AuthModule,
     ConfigModule.forRoot({
-      load: [configuration, databaseConfig, jwtConfig],
+      load: [configuration, databaseConfig, jwtConfig, encryptionConfig],
       isGlobal: true,
     }),
     TypeOrmModule.forRootAsync({

@@ -9,6 +9,7 @@ import { User } from "src/shared/entities/user.entity";
 import { LocalStrategy } from "./strategies/local.strategy";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { JwtRefreshStrategy } from "./strategies/jwt-refresh.strategy";
+import { EncryptionService } from "src/shared/services/encryption.service";
 
 @Module({
   imports: [
@@ -18,6 +19,12 @@ import { JwtRefreshStrategy } from "./strategies/jwt-refresh.strategy";
     JwtModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy, JwtRefreshStrategy],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    JwtStrategy,
+    JwtRefreshStrategy,
+    EncryptionService,
+  ],
 })
 export class AuthModule {}

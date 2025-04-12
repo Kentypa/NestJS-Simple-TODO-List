@@ -21,7 +21,7 @@ export function userService(url: string) {
 
   const updateEmail = async (user: formObject) => {
     return api
-      .put(`${url}/update-email`, { email: user.email })
+      .patch(`${url}/update-email`, { email: user.email })
       .catch((error) => {
         console.log(error.toJSON());
         throw new Error(error.message);
@@ -32,7 +32,7 @@ export function userService(url: string) {
     currentPassword: string;
     newPassword: string;
   }) => {
-    return api.put(`${url}/update-password`, passwordData).catch((error) => {
+    return api.patch(`${url}/update-password`, passwordData).catch((error) => {
       console.log(error.toJSON());
       throw new Error(error.message);
     });
