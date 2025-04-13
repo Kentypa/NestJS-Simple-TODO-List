@@ -11,6 +11,8 @@ import jwtConfig from "./config/jwt.config";
 import encryptionConfig from "./config/encription.config";
 import configuration from "./config/configuration.config";
 import databaseConfig from "./config/database.config";
+import { Achievements } from "./achievements/entities/achievements.entity";
+import { Market } from "./market/entities/market.entity";
 
 @Module({
   imports: [
@@ -31,8 +33,10 @@ import databaseConfig from "./config/database.config";
         username: configService.get<string>("database.user"),
         password: configService.get<string>("database.password"),
         database: configService.get<string>("database.name"),
-        entities: [Todo, User],
-        synchronize: true,
+        entities: [Todo, User, Achievements, Market],
+        synchronize: false,
+        migrations: ["dist/migrations/*.js"],
+        migrationsRun: true,
       }),
     }),
   ],
