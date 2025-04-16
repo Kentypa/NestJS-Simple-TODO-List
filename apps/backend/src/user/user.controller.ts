@@ -15,7 +15,6 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiQuery,
   ApiBody,
 } from "@nestjs/swagger";
 import { UserService } from "./user.service";
@@ -50,12 +49,6 @@ export class UserController {
   @ApiResponse({
     status: 200,
     description: "User removed successfully",
-  })
-  @ApiQuery({
-    name: "id",
-    description: "ID of user",
-    type: "number",
-    example: 1,
   })
   @HttpCode(200)
   async removeUser(@UserDecorator() user: User) {
