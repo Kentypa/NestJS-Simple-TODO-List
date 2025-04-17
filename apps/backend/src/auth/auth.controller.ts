@@ -7,16 +7,11 @@ import {
   UseGuards,
   ValidationPipe,
   Res,
+  Get,
 } from "@nestjs/common";
 import { Response } from "express";
 import { HttpExceptionFilter } from "src/shared/filters/http-exception.filter";
-import {
-  ApiBearerAuth,
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBody,
-} from "@nestjs/swagger";
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from "@nestjs/swagger";
 import { LoginUserDto } from "./dto/login-user.dto";
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "src/shared/guards/jwt-auth.guard";
@@ -27,7 +22,6 @@ import { User } from "src/shared/entities/user.entity";
 import { RegisterUserDto } from "./dto/register-user.dto";
 import { SuccessResponseDto } from "./dto/success-response.dto";
 
-@ApiBearerAuth()
 @ApiTags("auth")
 @Controller("auth")
 @UseFilters(HttpExceptionFilter)
@@ -81,6 +75,19 @@ export class AuthController {
   @HttpCode(200)
   async logout(@Res({ passthrough: true }) response: Response) {
     return this.authService.logout(response);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get("validate")
+  @ApiOperation({ summary: "Validate user token" })
+  @ApiResponse({
+    status: 200,
+    description: "User token validated successfully",
+    type: SuccessResponseDto,
+  })
+  @HttpCode(200)
+  async validate() {
+    return this.authService.validateToken();
   }
 
   @UseGuards(JwtRefreshAuthGuard)

@@ -18,7 +18,7 @@ export class User {
     description: "User email",
     type: "string",
   })
-  @Column()
+  @Column({ type: "varchar", length: 60 })
   email: string;
 
   @ApiProperty({
@@ -26,7 +26,7 @@ export class User {
     description: "User password",
     type: "string",
   })
-  @Column()
+  @Column({ type: "varchar", length: 100 })
   @Exclude()
   password: string;
 

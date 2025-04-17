@@ -3,7 +3,7 @@ import { AppModule } from "./app.module";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
-import session from "express-session";
+// import session from "express-session";
 import cookieParser from "cookie-parser";
 
 async function bootstrap() {
@@ -26,11 +26,11 @@ async function bootstrap() {
   SwaggerModule.setup("api", app, documentFactory);
 
   app.use(
-    session({
-      secret: "my-secret",
-      resave: false,
-      saveUninitialized: false,
-    }),
+    // session({
+    //   secret: "my-secret",
+    //   resave: false,
+    //   saveUninitialized: false,
+    // }),
     cookieParser()
   );
 

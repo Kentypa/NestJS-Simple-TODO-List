@@ -12,7 +12,7 @@ export class Todo {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: "varchar", length: 255 })
   task: string;
 
   @Column({ default: false })

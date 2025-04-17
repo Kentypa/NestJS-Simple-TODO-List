@@ -229,4 +229,8 @@ export class AuthService {
       success: true,
     };
   }
+
+  async validateToken(): Promise<SuccessResponseDto> {
+    return { success: true };
+  }
 }
